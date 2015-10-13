@@ -25,6 +25,7 @@ module CloudConductorCli
       method_option :patterns_json, type: :string, required: true,
                                     desc: 'JSON string include pattern urls and revisions to use system construction.',
                                     long_desc: 'e.g. \'{[{"url": "https://github.com/cloudconductor-patterns/rails_pattern.git", "revision": "master"}]}\''
+      method_option :os_version, type: :string, desc: 'OS name', default: 'CentOS-6.5'
       def create
         project_id = find_id_by(:project, :name, options[:project])
         payload = declared(options, self.class, :create).except('project', 'patterns_json').merge('project_id' => project_id)

@@ -22,10 +22,10 @@ module CloudConductorCli
       method_option :cloud, type: :string, required: true, desc: 'Cloud name or id'
       method_option :source_image, type: :string, required: true, desc: 'Base image id'
       method_option :ssh_username, type: :string, desc: 'SSH login username', default: 'ec2-user'
-      # method_option :os, type: :string, desc: 'OS name', default: 'CentOS-6.5'
+      method_option :os, type: :string, desc: 'OS name', default: 'CentOS-6.5'
       def create
         cloud_id = find_id_by(:cloud, :name, options[:cloud])
-        payload = declared(options, self.class, :create).except('cloud').merge('cloud_id' => cloud_id, 'os' => 'CentOS-6.5')
+        payload = declared(options, self.class, :create).except('cloud').merge('cloud_id' => cloud_id)
         response = connection.post('/base_images', payload)
 
         message('Create completed successfully.')
@@ -35,6 +35,7 @@ module CloudConductorCli
       desc 'update BASE_IMAGE', 'Update base_image information'
       method_option :source_image, type: :string, required: true, desc: 'Base image id'
       method_option :ssh_username, type: :string, desc: 'SSH login username', default: 'ec2-user'
+      method_option :os, type: :string, desc: 'OS name', default: 'CentOS-6.5'
       def update(base_image)
         id = find_id_by(:base_image, :source_image, base_image)
         payload = declared(options, self.class, :update)
