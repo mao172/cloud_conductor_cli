@@ -74,7 +74,7 @@ module CloudConductorCli
         end
 
         it 'allow valid options' do
-          allowed_options = [:cloud, :source_image, :ssh_username]
+          allowed_options = [:cloud, :source_image, :ssh_username, :os]
           expect(commands['create'].options.keys).to match_array(allowed_options)
         end
 
@@ -99,7 +99,7 @@ module CloudConductorCli
         end
 
         it 'allow valid options' do
-          allowed_options = [:source_image, :ssh_username]
+          allowed_options = [:source_image, :ssh_username, :os]
           expect(commands['update'].options.keys).to match_array(allowed_options)
         end
 
