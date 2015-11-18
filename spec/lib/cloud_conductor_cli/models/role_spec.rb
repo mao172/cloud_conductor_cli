@@ -19,7 +19,7 @@ module CloudConductorCli
         allow(CloudConductorCli::Helpers::Connection).to receive(:new).and_return(double(get: true, post: true, put: true, delete: true, request: true))
         allow(role).to receive(:find_id_by).with(:project, :name, anything).and_return(1)
         allow(role).to receive(:find_id_by).with(:role, :name, anything).and_return(mock_role[:id])
-        allow(role).to receive(:find_id_by).with(:role, :name, anything, project_id: 1).and_return(mock_role[:id])
+        allow(role).to receive(:find_id_by).with(:role, :name, anything, anything).and_return(mock_role[:id])
         allow(role).to receive(:output)
         allow(role).to receive(:message)
       end
@@ -36,7 +36,7 @@ module CloudConductorCli
         end
 
         it 'request GET /roles' do
-          expect(role.connection).to receive(:get).with('/roles', {})
+          expect(role.connection).to receive(:get).with('/roles', 'project_id' => nil)
           role.list
         end
 

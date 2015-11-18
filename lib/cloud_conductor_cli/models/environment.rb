@@ -6,14 +6,19 @@ module CloudConductorCli
       include Models::Base
 
       desc 'list', 'List environments'
+      method_option :system, type: :string, desc: 'System name or id'
       def list
-        response = connection.get('/environments')
+        system_id = find_id_by(:system, :name, options[:system]) if options[:system]
+        payload = declared(options, self.class, :create).except('system').merge('system_id' => system_id)
+        response = connection.get('/environments', payload)
         output(response)
       end
 
       desc 'show ENVIRONMENT', 'Show environment details'
+      method_option :system, type: :string, desc: 'System name or id'
       def show(environment)
-        id = find_id_by(:environment, :name, environment)
+        system_id = find_id_by(:system, :name, options[:system]) if options[:system]
+        id = find_id_by(:environment, :name, environment, system_id: system_id)
         response = connection.get("/environments/#{id}")
         output(response)
       end
@@ -58,8 +63,10 @@ module CloudConductorCli
                                      desc: 'Load pattern parameters from json file.',
                                      long_desc: 'If this option does not specified, open interactive shell to answer parameters.'
       method_option :user_attribute_file, type: :string, desc: 'Load additional chef attributes from json file'
+      method_option :system, type: :string, desc: 'System name or id'
       def update(environment)
-        id = find_id_by(:environment, :name, environment)
+        system_id = find_id_by(:system, :name, options[:system]) if options[:system]
+        id = find_id_by(:environment, :name, environment, system_id: system_id)
         payload = declared(options, self.class, :update)
                   .except('clouds', 'parameter_file', 'user_attribute_file')
         if options['clouds']

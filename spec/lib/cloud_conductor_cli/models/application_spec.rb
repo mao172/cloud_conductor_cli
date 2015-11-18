@@ -38,10 +38,10 @@ module CloudConductorCli
 
       before do
         allow(CloudConductorCli::Helpers::Connection).to receive(:new).and_return(double(get: true, post: true, put: true, delete: true, request: true))
-        allow(application).to receive(:find_id_by).with(:application, :name, anything).and_return(mock_application[:id])
+        allow(application).to receive(:find_id_by).with(:application, :name, anything, anything).and_return(mock_application[:id])
         allow(application).to receive(:find_id_by).with(:history, :version, any_args).and_return(mock_application_history[:id])
         allow(application).to receive(:find_id_by).with(:system, :name, anything).and_return(1)
-        allow(application).to receive(:find_id_by).with(:environment, :name, anything).and_return(1)
+        allow(application).to receive(:find_id_by).with(:environment, :name, anything, anything).and_return(1)
         allow(application).to receive(:output)
         allow(application).to receive(:message)
       end
@@ -49,22 +49,31 @@ module CloudConductorCli
       describe '#list' do
         let(:mock_response) { double(status: 200, headers: [], body: JSON.dump([mock_application])) }
         before do
-          allow(application.connection).to receive(:get).with('/applications').and_return(mock_response)
+          allow(application.connection).to receive(:get).with('/applications', anything).and_return(mock_response)
         end
 
         it 'allow valid options' do
-          allowed_options = []
+          allowed_options = [:system]
           expect(commands['list'].options.keys).to match_array(allowed_options)
         end
 
         it 'request GET /applications' do
-          expect(application.connection).to receive(:get).with('/applications')
+          expect(application.connection).to receive(:get).with('/applications', 'system_id' => nil)
           application.list
         end
 
         it 'display record list' do
           expect(application).to receive(:output).with(mock_response)
           application.list
+        end
+
+        describe 'with system_id' do
+          it 'request GET /applications' do
+            application.options = { system: 'system_name' }.with_indifferent_access
+            expect(application).to receive(:find_id_by).with(:system, :name, 'system_name')
+            expect(application.connection).to receive(:get).with('/applications', 'system_id' => 1)
+            application.list
+          end
         end
       end
 
@@ -81,7 +90,7 @@ module CloudConductorCli
         end
 
         it 'allow valid options' do
-          allowed_options = [:version]
+          allowed_options = [:version, :system]
           expect(commands['show'].options.keys).to match_array(allowed_options)
         end
 
@@ -111,6 +120,18 @@ module CloudConductorCli
           it 'display record details' do
             expect(application).to receive(:output).with(mock_response)
             expect(application).to receive(:output).with(mock_response_history)
+            application.show('application_name')
+          end
+        end
+
+        context 'with system' do
+          it 'request GET /applications/:id and GET /applications/:id/histories/:id' do
+            application.options = { system: 'system_name' }.with_indifferent_access
+            expect(application).to receive(:find_id_by).with(:system, :name, 'system_name')
+            expect(application).to receive(:find_id_by).with(:application, :name, 'application_name', system_id: 1)
+
+            expect(application.connection).to receive(:get).with("/applications/#{mock_application[:id]}")
+            expect(application.connection).to receive(:get).with("/applications/#{mock_application[:id]}/histories")
             application.show('application_name')
           end
         end
@@ -148,7 +169,7 @@ module CloudConductorCli
         end
 
         it 'allow valid options' do
-          allowed_options = [:name, :description, :domain]
+          allowed_options = [:name, :description, :domain, :system]
           expect(commands['update'].options.keys).to match_array(allowed_options)
         end
 
@@ -164,6 +185,19 @@ module CloudConductorCli
           expect(application).to receive(:output).with(mock_response)
           application.update('application_name')
         end
+
+        context 'with system' do
+          it 'request PUT /applications/:id with payload' do
+            application.options = mock_application.except(:id, :system_id).merge(system: 'system_name').with_indifferent_access
+
+            expect(application).to receive(:find_id_by).with(:system, :name, 'system_name')
+            expect(application).to receive(:find_id_by).with(:application, :name, 'application_name', system_id: 1)
+
+            payload = application.options.except('system')
+            expect(application.connection).to receive(:put).with("/applications/#{mock_application[:id]}", payload)
+            application.update('application_name')
+          end
+        end
       end
 
       describe '#delete' do
@@ -173,7 +207,7 @@ module CloudConductorCli
         end
 
         it 'allow valid options' do
-          allowed_options = []
+          allowed_options = [:system]
           expect(commands['delete'].options.keys).to match_array(allowed_options)
         end
 
@@ -186,6 +220,18 @@ module CloudConductorCli
           expect(application).to receive(:message)
           application.delete('application_name')
         end
+
+        context 'with system' do
+          it 'request DELETE /applications/:id' do
+            application.options = { system: 'system_name' }.with_indifferent_access
+
+            expect(application).to receive(:find_id_by).with(:system, :name, 'system_name')
+            expect(application).to receive(:find_id_by).with(:application, :name, 'application_name', system_id: 1)
+
+            expect(application.connection).to receive(:delete).with("/applications/#{mock_application[:id]}")
+            application.delete('application_name')
+          end
+        end
       end
 
       describe '#release' do
@@ -195,7 +241,7 @@ module CloudConductorCli
         end
 
         it 'allow valid options' do
-          allowed_options = [:protocol, :url, :revision, :type, :pre_deploy, :post_deploy, :parameters]
+          allowed_options = [:protocol, :url, :revision, :type, :pre_deploy, :post_deploy, :parameters, :system]
           expect(commands['release'].options.keys).to match_array(allowed_options)
         end
 
@@ -211,6 +257,20 @@ module CloudConductorCli
           expect(application).to receive(:output).with(mock_response)
           application.release(mock_application[:name])
         end
+
+        context 'with system' do
+          it 'request POST /applications/:id/histories with payload' do
+            application.options = mock_application_history.except(:id, :application_id, :version)
+              .merge(system: 'system_name').with_indifferent_access
+
+            expect(application).to receive(:find_id_by).with(:system, :name, 'system_name')
+            expect(application).to receive(:find_id_by).with(:application, :name, 'application_name', system_id: 1)
+
+            payload = application.options.except(:system)
+            expect(application.connection).to receive(:post).with("/applications/#{mock_application[:id]}/histories", payload)
+            application.release(mock_application[:name])
+          end
+        end
       end
 
       describe '#deploy' do
@@ -220,7 +280,7 @@ module CloudConductorCli
         end
 
         it 'allow valid options' do
-          allowed_options = [:version, :environment]
+          allowed_options = [:version, :environment, :system]
           expect(commands['deploy'].options.keys).to match_array(allowed_options)
         end
 
@@ -237,6 +297,22 @@ module CloudConductorCli
           expect(application).to receive(:message)
           expect(application).to receive(:output).with(mock_response)
           application.deploy(mock_application[:name])
+        end
+
+        context 'with system' do
+          it 'request POST /applications/:id/deploy with payload' do
+            application.options = { version:  mock_application_history[:version],
+                                    environment: 'environment_name',
+                                    system: 'system_name' }.with_indifferent_access
+            expect(application).to receive(:find_id_by).with(:system, :name, 'system_name')
+            expect(application).to receive(:find_id_by).with(:application, :name, 'application_name', system_id: 1)
+
+            payload = application.options.except(:version, :environment, :system)
+                      .merge('environment_id' => 1, 'application_history_id' => 1)
+
+            expect(application.connection).to receive(:post).with("/applications/#{mock_application[:id]}/deploy", payload)
+            application.deploy(mock_application[:name])
+          end
         end
       end
     end

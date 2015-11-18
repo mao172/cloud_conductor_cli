@@ -46,10 +46,12 @@ module CloudConductorCli
 
       before do
         allow(CloudConductorCli::Helpers::Connection).to receive(:new).and_return(double(get: true, post: true, put: true, delete: true, request: true))
-        allow(environment).to receive(:find_id_by).with(:environment, :name, anything).and_return(mock_environment[:id])
+        #        allow(environment).to receive(:find_id_by).with(:environment, :name, anything).and_return(mock_environment[:id])
+        allow(environment).to receive(:find_id_by).with(:environment, :name, anything, anything).and_return(mock_environment[:id])
         allow(environment).to receive(:find_id_by).with(:system, :name, anything).and_return(1)
         allow(environment).to receive(:find_id_by).with(:blueprint, :name, anything).and_return(1)
-        allow(environment).to receive(:find_id_by).with(:cloud, :name, anything).and_return(1)
+        #        allow(environment).to receive(:find_id_by).with(:cloud, :name, anything).and_return(1)
+        allow(environment).to receive(:find_id_by).with(:cloud, :name, anything, anything).and_return(1)
         allow(environment).to receive(:output)
         allow(environment).to receive(:message)
         allow(environment).to receive_message_chain(:outputter, :display_detail)
@@ -59,16 +61,16 @@ module CloudConductorCli
       describe '#list' do
         let(:mock_response) { double(status: 200, headers: [], body: JSON.dump([mock_environment])) }
         before do
-          allow(environment.connection).to receive(:get).with('/environments').and_return(mock_response)
+          allow(environment.connection).to receive(:get).with('/environments', anything).and_return(mock_response)
         end
 
         it 'allow valid options' do
-          allowed_options = []
+          allowed_options = [:system]
           expect(commands['list'].options.keys).to match_array(allowed_options)
         end
 
         it 'request GET /environments' do
-          expect(environment.connection).to receive(:get).with('/environments')
+          expect(environment.connection).to receive(:get).with('/environments', anything)
           environment.list
         end
 
@@ -85,7 +87,7 @@ module CloudConductorCli
         end
 
         it 'allow valid options' do
-          allowed_options = []
+          allowed_options = [:system]
           expect(commands['show'].options.keys).to match_array(allowed_options)
         end
 
@@ -139,7 +141,7 @@ module CloudConductorCli
         end
 
         it 'allow valid options' do
-          allowed_options = [:clouds, :description, :name, :parameter_file, :user_attribute_file]
+          allowed_options = [:clouds, :description, :name, :parameter_file, :user_attribute_file, :system]
           expect(commands['update'].options.keys).to match_array(allowed_options)
         end
 
