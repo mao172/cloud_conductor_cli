@@ -60,7 +60,7 @@ module CloudConductorCli
         message('Delete completed successfully.')
       end
 
-      desc 'build', 'Build blueprint and images'
+      desc 'build BLUEPRINT', 'Build blueprint and images'
       method_option :project, type: :string, desc: 'Project name or id'
       def build(blueprint)
         project_id = find_id_by(:project, :name, options[:project]) if options[:project]

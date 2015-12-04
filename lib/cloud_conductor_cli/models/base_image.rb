@@ -32,7 +32,7 @@ module CloudConductorCli
       method_option :cloud, type: :string, required: true, desc: 'Cloud name or id'
       method_option :source_image, type: :string, required: true, desc: 'Base image id'
       method_option :ssh_username, type: :string, desc: 'SSH login username', default: 'ec2-user'
-      # method_option :os, type: :string, desc: 'OS name', default: 'CentOS-6.5'
+      # method_option :os_version, type: :string, desc: 'OS name', default: 'default'
       method_option :project, type: :string, desc: 'Project name or id'
       def create
         project_id = find_id_by(:project, :name, options[:project]) if options[:project]
